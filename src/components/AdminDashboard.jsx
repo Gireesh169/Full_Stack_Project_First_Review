@@ -1,31 +1,48 @@
 import React, { useState, useEffect } from "react";
 import "./AdminDashboard.css";
 import ComplaintAnalytics from "./ComplaintAnalytics";
+import ComplaintCard from "./ComplaintCard";
 
 const STATUS_OPTIONS = ["Pending", "In Progress", "Resolved", "Rejected"];
+const PRIORITY_OPTIONS = ["Low", "Medium", "High", "Critical"];
+const EMPLOYEES = [
+  "John Smith",
+  "Sarah Johnson", 
+  "Michael Brown",
+  "Emily Davis",
+  "David Wilson"
+];
 
-const AdminDashboard = () => {
-  // --- Complaints ---
-  const [complaints, setComplaints] = useState(() => {
-    try {
-      const stored = localStorage.getItem("citizenComplaints");
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
-
+const AdminDashboard = ({ complaints = [], setComplaints }) => {
   const [filterCategory, setFilterCategory] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
-
-  useEffect(() => {
-    localStorage.setItem("citizenComplaints", JSON.stringify(complaints));
-  }, [complaints]);
+  const [viewMode, setViewMode] = useState("table"); // 'table' or 'cards'
 
   const updateStatus = (id, status) => {
     setComplaints((prev) =>
       prev.map((c) =>
         c.id === id ? { ...c, status, updatedAt: new Date().toISOString() } : c
+      )
+    );
+  };
+
+  const updatePriority = (id, priority) => {
+    setComplaints((prev) =>
+      prev.map((c) =>
+        c.id === id ? { ...c, priority, updatedAt: new Date().toISOString() } : c
+      )
+    );
+  };
+
+  const assignEmployee = (id, employeeName) => {
+    setComplaints((prev) =>
+      prev.map((c) =>
+        c.id === id ? { 
+          ...c, 
+          assignedTo: employeeName,
+          assignedDate: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        } : c
       )
     );
   };
@@ -111,7 +128,23 @@ const AdminDashboard = () => {
 
       {/* --- Complaint Management --- */}
       <section className="ad-section">
-        <h2>Manage Complaints</h2>
+        <div className="ad-section-header">
+          <h2>Manage Complaints</h2>
+          <div className="view-toggle">
+            <button 
+              className={`toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
+              onClick={() => setViewMode('table')}
+            >
+              📊 Table View
+            </button>
+            <button 
+              className={`toggle-btn ${viewMode === 'cards' ? 'active' : ''}`}
+              onClick={() => setViewMode('cards')}
+            >
+              🗂️ Card View
+            </button>
+          </div>
+        </div>
         
         {/* Filters */}
         <div className="filter-section">
@@ -149,6 +182,22 @@ const AdminDashboard = () => {
 
         {filteredComplaints.length === 0 ? (
           <p className="ad-muted">No complaints found.</p>
+        ) : viewMode === 'cards' ? (
+          <div className="complaints-card-grid">
+            {filteredComplaints.map((c) => (
+              <ComplaintCard
+                key={c.id}
+                complaint={c}
+                onStatusChange={updateStatus}
+                onPriorityChange={updatePriority}
+                onAssignEmployee={assignEmployee}
+                onDelete={deleteComplaint}
+                employees={EMPLOYEES}
+                showActions={true}
+                showEmployeeInfo={true}
+              />
+            ))}
+          </div>
         ) : (
           <div className="table-wrapper">
             <table className="admin-table">
@@ -157,7 +206,9 @@ const AdminDashboard = () => {
                   <th>Title</th>
                   <th>Category</th>
                   <th>Location</th>
+                  <th>Priority</th>
                   <th>Status</th>
+                  <th>Assigned To</th>
                   <th>Date</th>
                   <th>Actions</th>
                 </tr>
@@ -173,6 +224,19 @@ const AdminDashboard = () => {
                     <td>📍 {c.location || "N/A"}</td>
                     <td>
                       <select
+                        value={c.priority || 'Medium'}
+                        onChange={(e) => updatePriority(c.id, e.target.value)}
+                        className={`status-select priority-${(c.priority || 'Medium').toLowerCase()}`}
+                      >
+                        {PRIORITY_OPTIONS.map((p) => (
+                          <option key={p} value={p}>
+                            {p}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td>
+                      <select
                         value={c.status}
                         onChange={(e) => updateStatus(c.id, e.target.value)}
                         className={`status-select status-${c.status.toLowerCase().replace(/\s+/g, '-')}`}
@@ -184,6 +248,20 @@ const AdminDashboard = () => {
                         ))}
                       </select>
                     </td>
+                    <td>
+                      <select
+                        value={c.assignedTo || ''}
+                        onChange={(e) => assignEmployee(c.id, e.target.value)}
+                        className="status-select employee-select"
+                      >
+                        <option value="">Unassigned</option>
+                        {EMPLOYEES.map((emp) => (
+                          <option key={emp} value={emp}>
+                            {emp}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
                     <td>{new Date(c.createdAt).toLocaleDateString()}</td>
                     <td>
                       <button
@@ -191,7 +269,7 @@ const AdminDashboard = () => {
                         onClick={() => deleteComplaint(c.id)}
                         title="Delete complaint"
                       >
-                        🗑️ Delete
+                        🗑️
                       </button>
                     </td>
                   </tr>

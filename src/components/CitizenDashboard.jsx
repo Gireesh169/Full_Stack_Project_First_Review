@@ -10,26 +10,13 @@ const LOCATIONS = ["Sector 1", "Sector 5", "Sector 8", "Sector 12", "Main Road",
 const STATUSES = ["Pending", "In Progress", "Resolved", "Rejected"];
 
 // Main Component
-const CitizenDashboard = () => {
-  // --- Complaints State ---
-  const [complaints, setComplaints] = useState(() => {
-    try {
-      const raw = localStorage.getItem("citizenComplaints");
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
-
+const CitizenDashboard = ({ complaints = [], setComplaints }) => {
+  // --- Form State ---
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [location, setLocation] = useState(LOCATIONS[0]);
   const [imagePreview, setImagePreview] = useState("");
-
-  useEffect(() => {
-    localStorage.setItem("citizenComplaints", JSON.stringify(complaints));
-  }, [complaints]);
 
   // Calculate stats
   const pendingCount = useMemo(

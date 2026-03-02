@@ -13,6 +13,7 @@ import CityServices from "./components/CityServices";
 import Profile from "./components/Profile";
 import CitizenDashboard from "./components/CitizenDashboard";
 import AdminDashboard from "./components/AdminDashboard";
+import EmployeeDashboard from "./components/EmployeeDashboard";
 import Navbar from "./components/Navbar";
 import ServiceDetails from "./components/ServiceDetails";
 import ReportForm from "./components/ReportForm";
@@ -26,6 +27,16 @@ function App() {
     localStorage.getItem("userRole")
   );
 
+  // Centralized complaint state
+  const [complaints, setComplaints] = useState(() => {
+    try {
+      const stored = localStorage.getItem("citizenComplaints");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
   useEffect(() => {
     if (userRole) {
       localStorage.setItem("userRole", userRole);
@@ -33,6 +44,11 @@ function App() {
       localStorage.removeItem("userRole");
     }
   }, [userRole]);
+
+  // Sync complaints to localStorage
+  useEffect(() => {
+    localStorage.setItem("citizenComplaints", JSON.stringify(complaints));
+  }, [complaints]);
 
   const handleLogin = (role) => setUserRole(role);
   const handleSignup = (role) => setUserRole(role);
@@ -110,9 +126,11 @@ function App() {
           element={
             userRole ? (
               userRole === "admin" ? (
-                <AdminDashboard />
+                <AdminDashboard complaints={complaints} setComplaints={setComplaints} />
+              ) : userRole === "employee" ? (
+                <EmployeeDashboard complaints={complaints} setComplaints={setComplaints} />
               ) : (
-                <CitizenDashboard />
+                <CitizenDashboard complaints={complaints} setComplaints={setComplaints} />
               )
             ) : (
               <Navigate to="/login" />
@@ -136,7 +154,7 @@ function App() {
         {/* Complaint History route */}
         <Route
           path="/history"
-          element={userRole ? <ComplaintHistory /> : <Navigate to="/login" />}
+          element={userRole ? <ComplaintHistory complaints={complaints} /> : <Navigate to="/login" />}
         />
 
         {/* About & Help route */}
@@ -150,7 +168,7 @@ function App() {
           path="/admin"
           element={
             userRole === "admin" ? (
-              <AdminDashboard />
+              <AdminDashboard complaints={complaints} setComplaints={setComplaints} />
             ) : (
               <Navigate to="/dashboard" />
             )

@@ -28,13 +28,13 @@ const Login = ({ onLogin }) => {
         <h2 className="auth-title">Login</h2>
         <form onSubmit={handleSubmit} className="auth-form">
           <label>
-            Email
+            {role === "employee" ? "Employee Name" : "Email"}
             <input
-              type="email"
+              type={role === "employee" ? "text" : "email"}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="you@example.com"
+              placeholder={role === "employee" ? "Enter your name" : "you@example.com"}
             />
           </label>
           <label>
@@ -52,6 +52,7 @@ const Login = ({ onLogin }) => {
             <select value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="citizen">Citizen</option>
               <option value="admin">Admin</option>
+              <option value="employee">Employee</option>
             </select>
           </label>
 

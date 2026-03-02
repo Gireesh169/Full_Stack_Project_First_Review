@@ -1,21 +1,28 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import StatusBadge from './StatusBadge';
+import PriorityBadge from './PriorityBadge';
 import './ComplaintHistory.css';
 
-const ComplaintHistory = () => {
+const ComplaintHistory = ({ complaints: propComplaints }) => {
   const [complaints, setComplaints] = useState([]);
   const [filterStatus, setFilterStatus] = useState("All");
   const [filterCategory, setFilterCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("citizenComplaints");
-      const data = stored ? JSON.parse(stored) : [];
-      setComplaints(data);
-    } catch {
-      setComplaints([]);
+    // Use props if available, otherwise fall back to localStorage
+    if (propComplaints && propComplaints.length >= 0) {
+      setComplaints(propComplaints);
+    } else {
+      try {
+        const stored = localStorage.getItem("citizenComplaints");
+        const data = stored ? JSON.parse(stored) : [];
+        setComplaints(data);
+      } catch {
+        setComplaints([]);
+      }
     }
-  }, []);
+  }, [propComplaints]);
 
   const STATUSES = ["Pending", "In Progress", "Resolved", "Rejected"];
 
@@ -140,12 +147,10 @@ const ComplaintHistory = () => {
                 {/* Card Header */}
                 <div className="ch-card-header">
                   <div className="ch-card-title">{complaint.title}</div>
-                  <span
-                    className="ch-status-badge"
-                    style={{ backgroundColor: getStatusColor(complaint.status) + '20', color: getStatusColor(complaint.status) }}
-                  >
-                    {complaint.status}
-                  </span>
+                  <div className="ch-badges">
+                    <StatusBadge status={complaint.status} />
+                    {complaint.priority && <PriorityBadge priority={complaint.priority} />}
+                  </div>
                 </div>
 
                 {/* Card Content */}
@@ -170,6 +175,26 @@ const ComplaintHistory = () => {
                       })}
                     </span>
                   </div>
+
+                  {complaint.assignedTo && (
+                    <div className="ch-info-row">
+                      <span className="ch-label">👤 Assigned to:</span>
+                      <span className="ch-value">{complaint.assignedTo}</span>
+                    </div>
+                  )}
+
+                  {complaint.updatedAt && complaint.updatedAt !== complaint.createdAt && (
+                    <div className="ch-info-row">
+                      <span className="ch-label">🔄 Last Updated:</span>
+                      <span className="ch-value">
+                        {new Date(complaint.updatedAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                  )}
 
                   <div className="ch-description">
                     <span className="ch-label">Description:</span>
